@@ -16,6 +16,6 @@ interface Database {
 
 export const queryBuilder = new Kysely<Database>({
   dialect: new PlanetScaleDialect({
-    url: process.env.DATABASE_URL
+    url: process.env.DATABASE_URL_NODE
   })
 });
