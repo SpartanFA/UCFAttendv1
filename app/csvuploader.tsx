@@ -2,12 +2,25 @@
 
 import React, { useState, useRef } from "react";
 import Papa from "papaparse";
-import { Card, Title, Text, Flex, Button, Grid, Col } from "@tremor/react";
+import {  Button,
+          Card,
+          Table,
+          TableHead,
+          TableRow,
+          TableHeaderCell,
+          TableBody,
+          TableCell,
+          Text,
+          Title,
+          Badge,} from "@tremor/react";
 import { ArrowUpTrayIcon } from '@heroicons/react/24/solid'
 import Popup from 'reactjs-popup'
+import { string } from "prop-types";
 
 const Upload = () => {
   const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false); // added state variable
+  const [data, setData] = useState([]);
   const inputRef = useRef();
 
   const handleUploadCSV = (files) => {
@@ -15,10 +28,10 @@ const Upload = () => {
 
     const [file] = files;
 
-    const reader = new FileReader();
+    const reader = new FileReader();``
     reader.onloadend = ({ target }) => {
-      const csv = Papa.parse(target.result, { header: true });
-      // do something with the csv data here
+      const csvData = Papa.parse(target.result, { header: true })["data"];
+      setData(csvData);
     };
     reader.readAsText(file);
   };
@@ -27,61 +40,93 @@ const Upload = () => {
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
+    setDragging(true);
+    
   };
 
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    console.log(e.target);
+    setDragging(false);
+  }
+
   const handleDrop = (e) => {
+    console.log('dropped');
     e.preventDefault();
     e.stopPropagation();
     handleUploadCSV(e.dataTransfer.files);
+    setDragging(false);
   };
 
   return (
-      <div className="mb-4">
-        <Popup trigger={
+    <div className="mb-4">
+      <Popup
+        trigger={
           <Button
             icon={ArrowUpTrayIcon}
             size="xl"
             className="btn btn-primary"
           >
-            {uploading ? "Uploading..." : "Import .CSV"}
+            Import .CSV"
           </Button>
-          } 
-          modal
-          nested
-
-        >
-          <Card className="max-w-sm">
-            <Button className = "ImportantButton"
-              size="xl"
-              variant="secondary"
-              color = {uploading ? "neutral" : "blue"}
-              onClick={() => inputRef.current.click()}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              loading = {uploading}
+        }
+        modal
+        nested
+      >
+        <Card className="max-w-sm">
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
           >
-              {uploading ? "Uploading..." : "Drag and drop .CSV file here"}
-            </Button>
+            {data.length ? (
+              <Table className="mt-5">
+                <TableHead>
+                  <TableRow>
+                    {Object.keys(data[0]).map((key) => (
+                      <TableHeaderCell key={key}>{key}</TableHeaderCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {data.map((item, index) => (
+                    <TableRow key={index}>
+                      {Object.keys(item).map((key) => (
+                        <TableCell key={key}>{item[key]}</TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <Button
+                className="ImportantButton"
+                size="xl"
+                variant={dragging ? 'primary' : 'secondary'}
+                color={dragging ? 'neutral' : 'blue'}
+                onClick={() => inputRef.current.click()}
+                loading={uploading}
+              >
+                {uploading ? 'Uploading...' : 'Drag and drop .CSV file here'}
+              </Button>
+            )}
+          </div>
+  
           <input
-          ref={inputRef}
-          type="file"
-          className="sr-only"
-          disabled={uploading}
-          onChange={(e) => handleUploadCSV(e.target.files)}
+            ref={inputRef}
+            type="file"
+            className="sr-only"
+            disabled={uploading}
+            onChange={(e) => handleUploadCSV(e.target.files)}
           />
-          </Card>
-        </Popup>
-
-      </div>
-  );
+        </Card>
+      </Popup>
+    </div>
+  );  
 };
 
-const styles = `
-  .ImportantButton {
-    font-size: 24px;
-    padding: 16px;
-  }
-`;
 
 Upload.propTypes = {};
 
